@@ -59,8 +59,9 @@ public class HuffProcessor {
 		int val = in.readBits(BITS_PER_WORD);
 		String code = new String();
 		while (val != -1) {
-			code = encoding['A'];
+			code = encoding[val];
 			out.writeBits(code.length(), Integer.parseInt(code,2));
+			val = in.readBits(BITS_PER_WORD);
 		}
 		code = encoding[PSEUDO_EOF];
 		out.writeBits(code.length(), Integer.parseInt(code,2));
@@ -120,6 +121,7 @@ public class HuffProcessor {
 		int val = in.readBits(BITS_PER_WORD);
 		while (val != -1) {
 			freq[val] += 1;
+			val = in.readBits(BITS_PER_WORD);
 		}
 		freq[PSEUDO_EOF] = 1;
 		return freq;
@@ -157,14 +159,10 @@ public class HuffProcessor {
 				if (bits == 0) {
 					current = current.myLeft;
 					if (current == null) {
-						System.out.println("NULL LEFT CURRENT");
-						System.out.println("BITS = "+ bits);
 					}
 				}
 				else {
 					if (current.myRight == null) {
-						System.out.println("NULL RIGHT CHILD");
-						System.out.println("CURRENT VALUE: " + current.myValue);
 					}
 					current = current.myRight;
 					if (current == null) {
@@ -191,12 +189,10 @@ public class HuffProcessor {
 		if (bit == 0) {
 			HuffNode left = readTreeHeader(in);
 			HuffNode right = readTreeHeader(in);
-			if (left == null || right == null) System.out.println("NULL CHILD");
 			return new HuffNode(0,0,left,right);
 		}
 		else {
 			int value = in.readBits(BITS_PER_WORD + 1);
-			if (value == 0) System.out.println("ZERO VALUE LEAF NODE");
 			return new HuffNode(value, 0, null, null);
 		}
 	}
