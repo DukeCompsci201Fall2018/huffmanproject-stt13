@@ -62,7 +62,7 @@ public class HuffProcessor {
 		
 		int bits = in.readBits(BITS_PER_INT);
 		if (bits != HUFF_TREE) {
-			throw new HuffException("illegal header starts with" + bits);
+			throw new HuffException("illegal header starts with " + bits);
 		}
 		
 		HuffNode root = readTreeHeader(in);
@@ -70,43 +70,58 @@ public class HuffProcessor {
 		out.close();
 	}
 	
-	private void readCompressedBits(HuffNode root, BitInputStream in, BitOutputStream out) {
+	private void readCompressedBits(HuffNode root, BitInputStream input, BitOutputStream out) {
 		HuffNode current = root;
 		while (true) {
-			int bits = in.readBits(1);
+			int bits = input.readBits(1);
 			if (bits == -1) {
 				throw new HuffException("bad input, no PSEUDO_EOF");
 			}
 			else {
-				if (bits == 0) current = current.myLeft;
-				else current = current.myRight;
+				if (bits == 0) {
+					current = current.myLeft;
+					if (current == null) {
+						System.out.println("NULL LEFT CURRENT");
+						System.out.println("BITS = "+ bits);
+					}
+				}
+				else {
+					if (current.myRight == null) {
+						System.out.println("NULL RIGHT CHILD");
+						System.out.println("CURRENT VALUE: " + current.myValue);
+					}
+					current = current.myRight;
+					if (current == null) {
+						System.out.println("BITS = " + bits);
+					}
+				}
 				
-				if (current.myValue != 0) {
+				if (current.myRight == null) { //current is not a leaf node
 					if (current.myValue == PSEUDO_EOF) {
 						break;
 					}
 					else {
-						out.writeBits(BITS_PER_WORD, current.myValue);
+						out.writeBits(BITS_PER_WORD,current.myValue); //write bits for current.value
 						current = root;
 					}
 				}
-			}
+			}	
 		}
-		
 	}
 
 	private HuffNode readTreeHeader(BitInputStream in) {
 		int bit = in.readBits(1);
-		if (bit == -1) throw new HuffException("failed to read bits");
+		if (bit == -1) throw new HuffException("Failed to end message, no PSEUDO_EOF");
 		if (bit == 0) {
 			HuffNode left = readTreeHeader(in);
 			HuffNode right = readTreeHeader(in);
+			if (left == null || right == null) System.out.println("NULL CHILD");
 			return new HuffNode(0,0,left,right);
-				
 		}
 		else {
-			int value = in.readBits(BITS_PER_WORD + 1);	
-			return new HuffNode(value,0,null,null);
+			int value = in.readBits(BITS_PER_WORD + 1);
+			if (value == 0) System.out.println("ZERO VALUE LEAF NODE");
+			return new HuffNode(value, 0, null, null);
 		}
 	}
 }
